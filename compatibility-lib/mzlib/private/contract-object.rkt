@@ -4,7 +4,8 @@
          racket/contract/private/misc
          racket/contract/private/prop
          racket/private/class-internal
-         racket/private/class-c-old
+         racket/private/class-c
+         racket/private/object-c
          "contract-arr-checks.rkt")
 
 (require (for-syntax racket/base
@@ -273,31 +274,20 @@
                          [(field-ctc-stx ...) (map fld-ctc-stx flds)]
                          [(field-name ...) (map fld-name flds)]
                          [(field-ctc-var ...) (generate-temporaries flds)])
-             (syntax
+             (quasisyntax
               (let ([method-ctc-var method-ctc-stx] 
                     ...
                     [field-ctc-var (coerce-contract 'object-contract field-ctc-stx)]
                     ...)
-                (define ctc
-                  (make-contract
-                   #:name
-                   `(object-contract 
-                     ,(build-compound-type-name 'method-name method-ctc-var) ...
-                     ,(build-compound-type-name 'field 'field-name field-ctc-var) ...)
-                   #:projection
-                   (lambda (blame)
-                     (define p-app
-                       (make-wrapper-object blame
-                                            (list 'method-name ...) (list method-ctc-var ...)
-                                            '(field-name ...) (list field-ctc-var ...)))
-                     (lambda (val)
-                       (p-app ctc val #f)))
-                   #:first-order
-                   (lambda (val)
-                     (let/ec ret
-                       (check-object-contract val (list 'method-name ...) (list 'field-name ...)
-                                              (λ args (ret #f)))))))
-                  ctc))))]))))
-
+                (make-object-contract (list 'method-name ...)
+                                      (list method-ctc-var ...)
+                                      #,(make-object/c-method-proc-stx (map mtd-name mtds)
+                                                                       (syntax->list #'(method-ctc-var ...)))
+                                      (list 'field-name ...)
+                                      (list field-ctc-var ...)
+                                      #f ;; opaque-methods
+                                      #f ;; opaque-fields
+                                      #f ;; do-not-check-class-field-accessor-or-mutator-access?
+                                      )))))]))))
 
 

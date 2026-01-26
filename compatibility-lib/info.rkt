@@ -1,7 +1,7 @@
 #lang info
 (define collection 'multi)
 (define deps '("scheme-lib"
-               "base" 
+               ["base" #:version "9.1.0.7"]
                "net-lib"
                "sandbox-lib"))
 
